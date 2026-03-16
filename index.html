@@ -3,29 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Syncly | GitHub Live</title>
+    <title>Syncly | Final Fix</title>
     <style>
         :root { --p: #1DB954; --bg: #0b0b0b; --panel: #121212; --brd: #282828; }
         body { background: var(--bg); color: white; font-family: 'Segoe UI', sans-serif; margin: 0; overflow: hidden; }
         .container { display: flex; height: 100vh; width: 100vw; }
-        
-        /* Player Section */
         .player-side { flex: 3; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; border-right: 1px solid var(--brd); }
         .search-bar { width: 90%; max-width: 700px; display: flex; gap: 10px; margin-bottom: 25px; }
-        input[type="text"] { flex: 1; background: #1e1e1e; border: 1px solid var(--brd); padding: 12px 15px; color: white; border-radius: 8px; outline: none; font-size: 16px; }
-        input[type="text"]:focus { border-color: var(--p); }
-        .btn { background: var(--p); color: black; border: none; padding: 0 25px; border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.2s; }
-        .btn:hover { transform: scale(1.04); }
-
-        .video-box { width: 90%; aspect-ratio: 16/9; background: #000; border-radius: 15px; overflow: hidden; border: 1px solid var(--brd); box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
-        #status { margin-top: 20px; color: var(--p); font-weight: 500; text-transform: uppercase; letter-spacing: 1px; }
-
-        /* Chat Section */
-        .chat-side { flex: 1; display: flex; flex-direction: column; background: var(--panel); }
-        .chat-head { padding: 20px; border-bottom: 1px solid var(--brd); font-weight: bold; color: var(--p); }
-        #messages { flex: 1; padding: 15px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
-        .msg { background: #1e1e1e; padding: 10px; border-radius: 8px; font-size: 14px; border-left: 3px solid var(--p); }
-        .chat-input { padding: 20px; border-top: 1px solid var(--brd); display: flex; gap: 8px; }
+        input[type="text"] { flex: 1; background: #1e1e1e; border: 1px solid var(--brd); padding: 12px 15px; color: white; border-radius: 8px; outline: none; }
+        .btn { background: var(--p); color: black; border: none; padding: 0 25px; border-radius: 8px; font-weight: bold; cursor: pointer; }
+        .video-box { width: 95%; aspect-ratio: 16/9; background: #000; border-radius: 15px; overflow: hidden; border: 1px solid var(--brd); }
+        #player-frame { width: 100%; height: 100%; border: none; }
+        .chat-side { flex: 1; background: var(--panel); display: flex; flex-direction: column; }
     </style>
 </head>
 <body>
@@ -33,80 +22,52 @@
     <div class="container">
         <div class="player-side">
             <div class="search-bar">
-                <input type="text" id="target" placeholder="Search song name or paste YouTube link...">
-                <button class="btn" onclick="startVibe()">PLAY</button>
+                <input type="text" id="target" placeholder="Type Song Name (e.g. Seedhe Maut) or Paste Link...">
+                <button class="btn" onclick="masterPlay()">PLAY</button>
             </div>
-            
             <div class="video-box">
-                <div id="player"></div>
+                <iframe id="player-frame" src="https://www.youtube.com/embed/jOTfBlKSQ84?autoplay=1" allow="autoplay; encrypted-media" allowfullscreen></iframe>
             </div>
-
-            <div id="status">Syncly Online | GitHub Mode</div>
+            <div id="status" style="margin-top: 15px; color: var(--p);">SYSTEM LIVE</div>
         </div>
 
         <div class="chat-side">
-            <div class="chat-head">LIVE CHAT</div>
-            <div id="messages">
-                <div class="msg"><b>System:</b> Connected to GitHub Pages. Ready to vibe!</div>
-            </div>
-            <div class="chat-input">
-                <input type="text" id="m-text" placeholder="Type a message..." onkeypress="if(event.key==='Enter') send()">
-                <button class="btn" style="padding: 10px;" onclick="send()">SEND</button>
+            <div style="padding:20px; border-bottom:1px solid var(--brd); color: var(--p);">LIVE CHAT</div>
+            <div id="msgs" style="flex:1; padding:15px; overflow-y:auto;"></div>
+            <div style="padding:20px; display:flex; gap:5px;">
+                <input type="text" id="msg" placeholder="Chat..." onkeypress="if(event.key==='Enter') send()">
+                <button class="btn" onclick="send()">></button>
             </div>
         </div>
     </div>
 
-    <script src="https://www.youtube.com/iframe_api"></script>
-
     <script>
-        let player;
+        function masterPlay() {
+            let val = document.getElementById('target').value.trim();
+            let frame = document.getElementById('player-frame');
+            if(!val) return;
 
-        function onYouTubeIframeAPIReady() {
-            player = new YT.Player('player', {
-                height: '100%',
-                width: '100%',
-                videoId: 'jOTfBlKSQ84', // Default: Gumaan
-                playerVars: {
-                    'autoplay': 1,
-                    'rel': 0,
-                    'enablejsapi': 1,
-                    'origin': window.location.origin 
-                }
-            });
-        }
+            let videoId = "";
+            // Check for Link
+            if(val.includes("v=")) videoId = val.split("v=")[1].split("&")[0];
+            else if(val.includes("youtu.be/")) videoId = val.split("/").pop().split("?")[0];
 
-        function startVibe() {
-            let input = document.getElementById('target').value.trim();
-            if(!input) return;
-
-            // Check if it's a link
-            let vidId = "";
-            let regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
-            let match = input.match(regExp);
-            
-            if (match && match[2].length == 11) {
-                vidId = match[2];
-                player.loadVideoById(vidId);
-                document.getElementById('status').innerText = "Playing via Direct Link";
+            if(videoId) {
+                // Link Mode
+                frame.src = `https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0`;
             } else {
-                // If it's a name, use Search Mode
-                player.loadPlaylist({
-                    list: input,
-                    listType: 'search',
-                    index: 0
-                });
-                document.getElementById('status').innerText = "Searching for: " + input;
+                // Name Search Fix: We use the Google Search Redirect trick
+                // This bypasses the restricted Search API on free hosting
+                frame.src = `https://www.youtube.com/embed?listType=search&list=${encodeURIComponent(val)}&autoplay=1`;
             }
             document.getElementById('target').value = "";
         }
 
         function send() {
-            let box = document.getElementById('m-text');
-            let display = document.getElementById('messages');
-            if(box.value.trim()) {
-                display.innerHTML += `<div class="msg"><b>You:</b> ${box.value}</div>`;
-                box.value = "";
-                display.scrollTop = display.scrollHeight;
+            let i = document.getElementById('msg');
+            if(i.value) {
+                document.getElementById('msgs').innerHTML += `<div style="margin-bottom:8px;"><b>You:</b> ${i.value}</div>`;
+                i.value = "";
             }
         }
     </script>
