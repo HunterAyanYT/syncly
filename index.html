@@ -2,18 +2,19 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Syncly | Final Reliable Mode</title>
+    <title>Syncly | No-Tab Search Mode</title>
     <style>
-        :root { --p: #1DB954; --bg: #0b0b0b; }
+        :root { --p: #1DB954; --bg: #0b0b0b; --brd: #282828; }
         body { background: var(--bg); color: white; font-family: 'Segoe UI', sans-serif; margin: 0; overflow: hidden; }
         .container { display: flex; height: 100vh; }
-        .player-side { flex: 3; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; border-right: 1px solid #222; }
-        .search-area { width: 90%; display: flex; gap: 10px; margin-bottom: 20px; }
-        input { background: #1e1e1e; border: 1px solid #333; padding: 12px; color: white; border-radius: 8px; flex: 1; outline: none; }
-        .btn { background: var(--p); border: none; padding: 12px 20px; border-radius: 8px; font-weight: bold; cursor: pointer; color: black; }
-        .search-btn { background: #ff0000; color: white; } /* YouTube Red */
-        .video-box { width: 95%; aspect-ratio: 16/9; background: #000; border-radius: 15px; border: 1px solid #333; overflow: hidden; }
-        #player { width: 100%; height: 100%; border: none; }
+        .player-side { flex: 3; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; border-right: 1px solid var(--brd); }
+        .search-area { width: 90%; max-width: 700px; display: flex; gap: 10px; margin-bottom: 25px; }
+        input { background: #1e1e1e; border: 1px solid var(--brd); padding: 12px; color: white; border-radius: 8px; flex: 1; outline: none; }
+        input:focus { border-color: var(--p); }
+        .btn { background: var(--p); border: none; padding: 0 25px; border-radius: 8px; font-weight: bold; cursor: pointer; color: black; }
+        .video-box { width: 95%; aspect-ratio: 16/9; background: #000; border-radius: 15px; border: 1px solid var(--brd); overflow: hidden; }
+        iframe { width: 100%; height: 100%; border: none; }
+        #status { margin-top: 15px; color: var(--p); font-size: 14px; text-transform: uppercase; }
     </style>
 </head>
 <body>
@@ -21,40 +22,45 @@
 <div class="container">
     <div class="player-side">
         <div class="search-area">
-            <input type="text" id="target" placeholder="Paste Link here...">
-            <button class="btn" onclick="play()">PLAY</button>
-            <button class="btn search-btn" onclick="openYT()">SEARCH NAME</button>
+            <input type="text" id="target" placeholder="Type Song Name (e.g. Seedhe Maut Luka Chippi)...">
+            <button class="btn" onclick="synclySearch()">PLAY</button>
         </div>
         <div class="video-box">
-            <iframe id="player" src="https://www.youtube.com/embed/jOTfBlKSQ84?autoplay=1" allow="autoplay; encrypted-media" allowfullscreen></iframe>
+            <iframe id="main-frame" src="https://www.youtube.com/embed/jOTfBlKSQ84?autoplay=1&rel=0" allow="autoplay; encrypted-media" allowfullscreen></iframe>
         </div>
-        <p style="color: var(--p); margin-top: 10px;">Tip: Search name, copy link, and paste it here!</p>
+        <p id="status">Syncly Engine: Ready</p>
     </div>
 </div>
 
 <script>
-    function play() {
+    function synclySearch() {
         let val = document.getElementById('target').value.trim();
-        let frame = document.getElementById('player');
-        let vidId = "";
+        let frame = document.getElementById('main-frame');
+        let status = document.getElementById('status');
 
-        if(val.includes("v=")) vidId = val.split("v=")[1].split("&")[0];
-        else if(val.includes("youtu.be/")) vidId = val.split("/").pop().split("?")[0];
+        if(!val) return;
+
+        // Step 1: Check if it's a direct link
+        let vidId = extractID(val);
 
         if(vidId) {
-            frame.src = `https://www.youtube.com/embed/${vidId}?autoplay=1`;
+            frame.src = `https://www.youtube.com/embed/${vidId}?autoplay=1&rel=0&showinfo=0`;
+            status.innerText = "Playing via Link...";
         } else {
-            alert("Bhai, please link paste karo. Name search ke liye side wala button use karo!");
+            // Step 2: The "Ghost Search" Logic
+            // Hum embed URL ko search parameter ke saath force karenge
+            // Isse YouTube ka embed player search result ko pehla video samajh kar play karega
+            frame.src = `https://www.youtube.com/embed?listType=search&list=${encodeURIComponent(val)}&autoplay=1`;
+            status.innerText = "Searching for: " + val;
         }
+        
+        document.getElementById('target').value = "";
     }
 
-    function openYT() {
-        let val = document.getElementById('target').value.trim();
-        if(val) {
-            window.open(`https://www.youtube.com/results?search_query=${encodeURIComponent(val)}`, '_blank');
-        } else {
-            window.open(`https://www.youtube.com`, '_blank');
-        }
+    function extractID(url) {
+        let regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+        let match = url.match(regExp);
+        return (match && match[2].length == 11) ? match[2] : null;
     }
 </script>
 </body>
