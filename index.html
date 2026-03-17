@@ -2,72 +2,148 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Syncly | Pro API Mode</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Syncly | Pro Live</title>
     <style>
-        :root { --p: #1DB954; --bg: #0b0b0b; --brd: #282828; }
+        :root { --p: #1DB954; --bg: #0b0b0b; --panel: #121212; --brd: #282828; }
         body { background: var(--bg); color: white; font-family: 'Segoe UI', sans-serif; margin: 0; overflow: hidden; }
-        .container { display: flex; height: 100vh; }
-        .player-side { flex: 3; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; border-right: 1px solid var(--brd); }
-        .search-area { width: 90%; max-width: 700px; display: flex; gap: 10px; margin-bottom: 25px; }
+        .container { display: flex; height: 100vh; width: 100vw; }
+        
+        /* Left Side: Player */
+        .player-side { flex: 3; display: flex; flex-direction: column; padding: 20px; border-right: 1px solid var(--brd); }
+        .nav-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .room-info { font-size: 14px; color: #aaa; background: #1e1e1e; padding: 8px 15px; border-radius: 20px; border: 1px solid var(--brd); }
+        
+        .search-bar { width: 100%; display: flex; gap: 10px; margin-bottom: 20px; }
         input { background: #1e1e1e; border: 1px solid var(--brd); padding: 12px; color: white; border-radius: 8px; flex: 1; outline: none; }
-        .btn { background: var(--p); border: none; padding: 0 25px; border-radius: 8px; font-weight: bold; cursor: pointer; color: black; }
-        .video-box { width: 95%; aspect-ratio: 16/9; background: #000; border-radius: 15px; border: 1px solid var(--brd); overflow: hidden; }
+        input:focus { border-color: var(--p); }
+        .btn { background: var(--p); border: none; padding: 0 20px; border-radius: 8px; font-weight: bold; cursor: pointer; color: black; transition: 0.2s; }
+        .btn:hover { transform: scale(1.03); }
+
+        .video-box { width: 100%; aspect-ratio: 16/9; background: #000; border-radius: 15px; overflow: hidden; border: 1px solid var(--brd); }
         iframe { width: 100%; height: 100%; border: none; }
-        #status { margin-top: 15px; color: var(--p); font-size: 14px; }
+
+        /* Right Side: Chat & Rooms */
+        .chat-side { flex: 1; display: flex; flex-direction: column; background: var(--panel); }
+        .tabs { display: flex; border-bottom: 1px solid var(--brd); }
+        .tab { flex: 1; padding: 15px; text-align: center; cursor: pointer; font-size: 13px; font-weight: bold; color: #888; }
+        .active-tab { color: var(--p); border-bottom: 2px solid var(--p); }
+
+        .chat-area { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+        #messages { flex: 1; padding: 15px; overflow-y: auto; font-size: 14px; display: flex; flex-direction: column; gap: 10px; }
+        .msg { background: #1e1e1e; padding: 10px; border-radius: 8px; border-left: 3px solid var(--p); }
+        
+        .input-box { padding: 15px; border-top: 1px solid var(--brd); display: flex; gap: 5px; }
+        
+        .room-controls { padding: 20px; display: flex; flex-direction: column; gap: 10px; }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <div class="player-side">
-        <div class="search-area">
-            <input type="text" id="query" placeholder="Search Seedhe Maut, Talwiinder, etc...">
-            <button class="btn" onclick="proSearch()">PLAY</button>
+    <div class="container">
+        <div class="player-side">
+            <div class="nav-top">
+                <h2 style="margin:0; color:var(--p);">Syncly</h2>
+                <div class="room-info" id="room-display">Room: Not Connected</div>
+            </div>
+
+            <div class="search-bar">
+                <input type="text" id="query" placeholder="Search song or paste link...">
+                <button class="btn" onclick="proSearch()">PLAY</button>
+            </div>
+
+            <div class="video-box">
+                <iframe id="main-player" src="https://www.youtube.com/embed/jOTfBlKSQ84?autoplay=1&enablejsapi=1" allow="autoplay; encrypted-media" allowfullscreen></iframe>
+            </div>
+            <p id="status" style="margin-top:10px; font-size:12px; color:#666;">Ready to vibe...</p>
         </div>
-        <div class="video-box">
-            <iframe id="main-player" src="https://www.youtube.com/embed/jOTfBlKSQ84?autoplay=1" allow="autoplay; encrypted-media" allowfullscreen></iframe>
+
+        <div class="chat-side">
+            <div class="tabs">
+                <div class="tab active-tab">CHAT</div>
+                <div class="tab">ROOMS</div>
+            </div>
+
+            <div class="chat-area" id="chat-section">
+                <div id="messages">
+                    <div class="msg"><b>System:</b> Welcome to Syncly! Create a room to start syncing.</div>
+                </div>
+                <div class="input-box">
+                    <input type="text" id="m-input" placeholder="Say something..." onkeypress="if(event.key==='Enter') sendMsg()">
+                    <button class="btn" onclick="sendMsg()">></button>
+                </div>
+            </div>
+
+            <div class="room-controls">
+                <button class="btn" style="background:#333; color:white;" onclick="createRoom()">CREATE ROOM</button>
+                <div style="display:flex; gap:5px;">
+                    <input type="text" id="room-input" placeholder="Enter Room ID">
+                    <button class="btn" onclick="joinRoom()">JOIN</button>
+                </div>
+            </div>
         </div>
-        <p id="status">PRO ENGINE ACTIVE</p>
     </div>
-</div>
 
-<script>
-    const API_KEY = 'AIzaSyAaCRqzXizB5wt8iFc7O-yfFvherdJi_-I'; // <--- APNI KEY YAHAN DAAL BHAI
+    <script>
+        const API_KEY = 'AIzaSyAaCRqzXizB5wt8iFc7O-yfFvherdJi_-I'; // <--- BHAI YAHAN APNI KEY DAAL
 
-    async function proSearch() {
-        let val = document.getElementById('query').value.trim();
-        let frame = document.getElementById('main-player');
-        let status = document.getElementById('status');
+        // 1. Pro Search Function
+        async function proSearch() {
+            let val = document.getElementById('query').value.trim();
+            let frame = document.getElementById('main-player');
+            let status = document.getElementById('status');
+            if(!val) return;
 
-        if(!val) return;
+            let vidId = val.match(/(?:https?:\/{2})?(?:w{3}\.)?youtu(?:be)?\.(?:com|be)(?:\/watch\?v=|\/)([^\s&]+)/);
+            
+            if(vidId && vidId[1]) {
+                frame.src = `https://www.youtube.com/embed/${vidId[1]}?autoplay=1`;
+                status.innerText = "Playing via Link";
+            } else {
+                status.innerText = "Searching YouTube...";
+                try {
+                    const response = await fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=1&q=${encodeURIComponent(val)}&type=video&key=${API_KEY}`);
+                    const data = await response.json();
+                    if(data.items && data.items.length > 0) {
+                        let newId = data.items[0].id.videoId;
+                        frame.src = `https://www.youtube.com/embed/${newId}?autoplay=1`;
+                        status.innerText = "Playing: " + data.items[0].snippet.title;
+                    }
+                } catch (e) { status.innerText = "API Error!"; }
+            }
+            document.getElementById('query').value = "";
+        }
 
-        // Check if it's a direct link
-        let vidId = val.match(/(?:https?:\/{2})?(?:w{3}\.)?youtu(?:be)?\.(?:com|be)(?:\/watch\?v=|\/)([^\s&]+)/);
-        
-        if(vidId && vidId[1]) {
-            frame.src = `https://www.youtube.com/embed/${vidId[1]}?autoplay=1`;
-            status.innerText = "Playing via Link";
-        } else {
-            status.innerText = "Searching YouTube Database...";
-            try {
-                // Real API Fetch
-                const response = await fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=1&q=${encodeURIComponent(val)}&type=video&key=${API_KEY}`);
-                const data = await response.json();
+        // 2. Room Logic (Basic Simulation for now)
+        function createRoom() {
+            let id = Math.floor(1000 + Math.random() * 9000);
+            document.getElementById('room-display').innerText = "Room: #" + id;
+            addMsg("System", "Room #" + id + " created. Share this ID with friends!");
+        }
 
-                if(data.items && data.items.length > 0) {
-                    let newId = data.items[0].id.videoId;
-                    frame.src = `https://www.youtube.com/embed/${newId}?autoplay=1`;
-                    status.innerText = "Now Playing: " + data.items[0].snippet.title;
-                } else {
-                    status.innerText = "No results found!";
-                }
-            } catch (error) {
-                status.innerText = "API Error! Check your Key.";
-                console.error(error);
+        function joinRoom() {
+            let id = document.getElementById('room-input').value;
+            if(id) {
+                document.getElementById('room-display').innerText = "Room: #" + id;
+                addMsg("System", "Joined Room #" + id);
+                document.getElementById('room-input').value = "";
             }
         }
-        document.getElementById('query').value = "";
-    }
-</script>
+
+        // 3. Chat Logic
+        function sendMsg() {
+            let input = document.getElementById('m-input');
+            if(input.value.trim()) {
+                addMsg("You", input.value);
+                input.value = "";
+            }
+        }
+
+        function addMsg(user, text) {
+            let box = document.getElementById('messages');
+            box.innerHTML += `<div class="msg"><b>${user}:</b> ${text}</div>`;
+            box.scrollTop = box.scrollHeight;
+        }
+    </script>
 </body>
 </html>
