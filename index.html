@@ -2,140 +2,153 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Syncly | Pro Live</title>
+    <title>Syncly | Real-Time Sync</title>
+    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <style>
         :root { --p: #1DB954; --bg: #0b0b0b; --panel: #121212; --brd: #282828; }
-        body { background: var(--bg); color: white; font-family: 'Segoe UI', sans-serif; margin: 0; overflow: hidden; }
-        .container { display: flex; height: 100vh; width: 100vw; }
+        body, html { margin: 0; padding: 0; background: var(--bg); color: white; font-family: 'Segoe UI', sans-serif; height: 100%; overflow: hidden; }
         
-        /* Left Side: Player */
+        /* 1. STARTING PAGE */
+        #entry-page { position: fixed; inset: 0; background: var(--bg); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 100; text-align: center; }
+        .hero-title { font-size: 50px; color: var(--p); margin-bottom: 10px; font-weight: 800; letter-spacing: -1px; }
+        .entry-card { background: var(--panel); padding: 40px; border-radius: 20px; border: 1px solid var(--brd); width: 350px; }
+        
+        /* 2. MAIN APP PAGE (Hidden by default) */
+        #main-app { display: none; height: 100vh; width: 100vw; }
+        .container { display: flex; height: 100%; }
         .player-side { flex: 3; display: flex; flex-direction: column; padding: 20px; border-right: 1px solid var(--brd); }
-        .nav-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-        .room-info { font-size: 14px; color: #aaa; background: #1e1e1e; padding: 8px 15px; border-radius: 20px; border: 1px solid var(--brd); }
-        
-        .search-bar { width: 100%; display: flex; gap: 10px; margin-bottom: 20px; }
-        input { background: #1e1e1e; border: 1px solid var(--brd); padding: 12px; color: white; border-radius: 8px; flex: 1; outline: none; }
-        input:focus { border-color: var(--p); }
-        .btn { background: var(--p); border: none; padding: 0 20px; border-radius: 8px; font-weight: bold; cursor: pointer; color: black; transition: 0.2s; }
-        .btn:hover { transform: scale(1.03); }
-
-        .video-box { width: 100%; aspect-ratio: 16/9; background: #000; border-radius: 15px; overflow: hidden; border: 1px solid var(--brd); }
-        iframe { width: 100%; height: 100%; border: none; }
-
-        /* Right Side: Chat & Rooms */
         .chat-side { flex: 1; display: flex; flex-direction: column; background: var(--panel); }
-        .tabs { display: flex; border-bottom: 1px solid var(--brd); }
-        .tab { flex: 1; padding: 15px; text-align: center; cursor: pointer; font-size: 13px; font-weight: bold; color: #888; }
-        .active-tab { color: var(--p); border-bottom: 2px solid var(--p); }
 
-        .chat-area { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
-        #messages { flex: 1; padding: 15px; overflow-y: auto; font-size: 14px; display: flex; flex-direction: column; gap: 10px; }
-        .msg { background: #1e1e1e; padding: 10px; border-radius: 8px; border-left: 3px solid var(--p); }
-        
-        .input-box { padding: 15px; border-top: 1px solid var(--brd); display: flex; gap: 5px; }
-        
-        .room-controls { padding: 20px; display: flex; flex-direction: column; gap: 10px; }
+        /* UI Components */
+        input { background: #1e1e1e; border: 1px solid var(--brd); padding: 12px; color: white; border-radius: 8px; outline: none; margin: 10px 0; width: 80%; }
+        .btn { background: var(--p); border: none; padding: 12px 25px; border-radius: 8px; font-weight: bold; cursor: pointer; color: black; transition: 0.2s; width: 100%; margin-top: 10px; }
+        .btn:hover { transform: scale(1.03); opacity: 0.9; }
+        .video-box { width: 100%; aspect-ratio: 16/9; background: #000; border-radius: 15px; overflow: hidden; border: 1px solid var(--brd); margin-top: 20px; }
+        #messages { flex: 1; padding: 15px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; }
+        .msg { background: #1e1e1e; padding: 8px 12px; border-radius: 8px; border-left: 3px solid var(--p); font-size: 14px; width: fit-content; }
     </style>
 </head>
 <body>
 
-    <div class="container">
-        <div class="player-side">
-            <div class="nav-top">
-                <h2 style="margin:0; color:var(--p);">Syncly</h2>
-                <div class="room-info" id="room-display">Room: Not Connected</div>
-            </div>
-
-            <div class="search-bar">
-                <input type="text" id="query" placeholder="Search song or paste link...">
-                <button class="btn" onclick="proSearch()">PLAY</button>
-            </div>
-
-            <div class="video-box">
-                <iframe id="main-player" src="https://www.youtube.com/embed/jOTfBlKSQ84?autoplay=1&enablejsapi=1" allow="autoplay; encrypted-media" allowfullscreen></iframe>
-            </div>
-            <p id="status" style="margin-top:10px; font-size:12px; color:#666;">Ready to vibe...</p>
+    <div id="entry-page">
+        <div class="hero-title">Syncly</div>
+        <p style="color:#888; margin-bottom: 30px;">Vibe together, anywhere.</p>
+        <div class="entry-card">
+            <button class="btn" onclick="initPeer(null)">CREATE NEW ROOM</button>
+            <p style="margin: 20px 0; color: #444;">OR</p>
+            <input type="text" id="join-id" placeholder="Enter Friend's ID">
+            <button class="btn" style="background:#333; color:white;" onclick="joinExistingRoom()">JOIN ROOM</button>
         </div>
+    </div>
 
-        <div class="chat-side">
-            <div class="tabs">
-                <div class="tab active-tab">CHAT</div>
-                <div class="tab">ROOMS</div>
+    <div id="main-app">
+        <div class="container">
+            <div class="player-side">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <h2 style="color:var(--p); margin:0;">Syncly</h2>
+                    <div id="my-id-display" style="background:#222; padding:5px 15px; border-radius:20px; font-size:12px;">ID: Connecting...</div>
+                </div>
+                
+                <div style="display:flex; gap:10px; margin-top:20px;">
+                    <input type="text" id="query" placeholder="Search song or paste link..." style="margin:0;">
+                    <button class="btn" style="width:100px; margin:0;" onclick="handleSearch()">PLAY</button>
+                </div>
+
+                <div class="video-box">
+                    <iframe id="main-player" src="https://www.youtube.com/embed/jOTfBlKSQ84?enablejsapi=1" allow="autoplay; encrypted-media" allowfullscreen></iframe>
+                </div>
+                <p id="status" style="font-size:12px; color:#555; margin-top:10px;">Status: Connected</p>
             </div>
 
-            <div class="chat-area" id="chat-section">
-                <div id="messages">
-                    <div class="msg"><b>System:</b> Welcome to Syncly! Create a room to start syncing.</div>
-                </div>
-                <div class="input-box">
-                    <input type="text" id="m-input" placeholder="Say something..." onkeypress="if(event.key==='Enter') sendMsg()">
-                    <button class="btn" onclick="sendMsg()">></button>
-                </div>
-            </div>
-
-            <div class="room-controls">
-                <button class="btn" style="background:#333; color:white;" onclick="createRoom()">CREATE ROOM</button>
-                <div style="display:flex; gap:5px;">
-                    <input type="text" id="room-input" placeholder="Enter Room ID">
-                    <button class="btn" onclick="joinRoom()">JOIN</button>
+            <div class="chat-side">
+                <div style="padding:15px; border-bottom:1px solid var(--brd); font-weight:bold; color:var(--p);">LIVE CHAT</div>
+                <div id="messages"></div>
+                <div style="padding:15px; border-top:1px solid var(--brd); display:flex; gap:5px;">
+                    <input type="text" id="m-input" placeholder="Type..." style="margin:0;" onkeypress="if(event.key==='Enter') sendChat()">
+                    <button class="btn" style="width:60px; margin:0;" onclick="sendChat()">></button>
                 </div>
             </div>
         </div>
     </div>
 
     <script>
-        const API_KEY = 'AIzaSyAaCRqzXizB5wt8iFc7O-yfFvherdJi_-I'; // <--- BHAI YAHAN APNI KEY DAAL
+        const YT_API_KEY = 'AIzaSyAaCRqzXizB5wt8iFc7O-yfFvherdJi_-I'; // <--- APNI KEY YAHAN DAAL BHAI
+        let peer, conn;
+        let myId = "";
 
-        // 1. Pro Search Function
-        async function proSearch() {
+        // PeerJS Initialize
+        function initPeer(id) {
+            peer = new Peer(); 
+            peer.on('open', (newId) => {
+                myId = newId;
+                document.getElementById('my-id-display').innerText = "ROOM ID: " + myId;
+                if(!id) showApp(); // Create Mode
+            });
+
+            peer.on('connection', (connection) => {
+                conn = connection;
+                setupChat();
+            });
+        }
+
+        function joinExistingRoom() {
+            let targetId = document.getElementById('join-id').value.trim();
+            if(!targetId) return alert("ID toh daal bhai!");
+            
+            peer = new Peer();
+            peer.on('open', () => {
+                conn = peer.connect(targetId);
+                setupChat();
+                showApp();
+            });
+        }
+
+        function setupChat() {
+            conn.on('data', (data) => {
+                if(data.type === 'chat') addMsg("Friend", data.msg);
+                if(data.type === 'play') playVideo(data.videoId, false);
+            });
+            conn.on('open', () => addMsg("System", "Sync Connected!"));
+        }
+
+        function showApp() {
+            document.getElementById('entry-page').style.display = 'none';
+            document.getElementById('main-app').style.display = 'block';
+        }
+
+        // Search & Play
+        async function handleSearch() {
             let val = document.getElementById('query').value.trim();
-            let frame = document.getElementById('main-player');
-            let status = document.getElementById('status');
             if(!val) return;
 
             let vidId = val.match(/(?:https?:\/{2})?(?:w{3}\.)?youtu(?:be)?\.(?:com|be)(?:\/watch\?v=|\/)([^\s&]+)/);
-            
-            if(vidId && vidId[1]) {
-                frame.src = `https://www.youtube.com/embed/${vidId[1]}?autoplay=1`;
-                status.innerText = "Playing via Link";
-            } else {
-                status.innerText = "Searching YouTube...";
-                try {
-                    const response = await fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=1&q=${encodeURIComponent(val)}&type=video&key=${API_KEY}`);
-                    const data = await response.json();
-                    if(data.items && data.items.length > 0) {
-                        let newId = data.items[0].id.videoId;
-                        frame.src = `https://www.youtube.com/embed/${newId}?autoplay=1`;
-                        status.innerText = "Playing: " + data.items[0].snippet.title;
-                    }
-                } catch (e) { status.innerText = "API Error!"; }
+            let finalId = "";
+
+            if(vidId) finalId = vidId[1];
+            else {
+                const res = await fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=1&q=${encodeURIComponent(val)}&type=video&key=${YT_API_KEY}`);
+                const data = await res.json();
+                if(data.items.length > 0) finalId = data.items[0].id.videoId;
             }
-            document.getElementById('query').value = "";
-        }
 
-        // 2. Room Logic (Basic Simulation for now)
-        function createRoom() {
-            let id = Math.floor(1000 + Math.random() * 9000);
-            document.getElementById('room-display').innerText = "Room: #" + id;
-            addMsg("System", "Room #" + id + " created. Share this ID with friends!");
-        }
-
-        function joinRoom() {
-            let id = document.getElementById('room-input').value;
-            if(id) {
-                document.getElementById('room-display').innerText = "Room: #" + id;
-                addMsg("System", "Joined Room #" + id);
-                document.getElementById('room-input').value = "";
+            if(finalId) {
+                playVideo(finalId, true);
             }
         }
 
-        // 3. Chat Logic
-        function sendMsg() {
-            let input = document.getElementById('m-input');
-            if(input.value.trim()) {
-                addMsg("You", input.value);
-                input.value = "";
+        function playVideo(id, shouldSend) {
+            document.getElementById('main-player').src = `https://www.youtube.com/embed/${id}?autoplay=1`;
+            if(shouldSend && conn) {
+                conn.send({ type: 'play', videoId: id });
+            }
+        }
+
+        function sendChat() {
+            let msg = document.getElementById('m-input').value;
+            if(msg && conn) {
+                conn.send({ type: 'chat', msg: msg });
+                addMsg("You", msg);
+                document.getElementById('m-input').value = "";
             }
         }
 
