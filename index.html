@@ -2,45 +2,94 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Syncly | Identify & Sync</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Syncly | Vibe Together</title>
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <style>
-        :root { --p: #1DB954; --bg: #0b0b0b; --panel: #121212; --brd: #282828; }
-        body, html { margin: 0; padding: 0; background: var(--bg); color: white; font-family: 'Segoe UI', sans-serif; height: 100vh; overflow: hidden; }
+        :root { 
+            --p: #1DB954; /* Spotify Green */
+            --bg: #090909; /* Near-black background */
+            --panel: #141414; /* Slightly lighter black panel */
+            --brd: #222; /* Minimal border color */
+            --text-p: #fff; /* Primary text */
+            --text-s: #aaa; /* Secondary text */
+            --ease: cubic-bezier(0.23, 1, 0.32, 1); /* Custom ease-out curve */
+        }
         
-        /* Welcome Page */
-        #entry-page { position: fixed; inset: 0; background: var(--bg); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 100; }
-        .entry-card { background: var(--panel); padding: 35px; border-radius: 20px; border: 1px solid var(--brd); width: 350px; text-align: center; box-shadow: 0 10px 50px rgba(0,0,0,0.5); }
+        body, html { margin: 0; padding: 0; background: var(--bg); color: var(--text-p); font-family: 'SF Pro Display', 'Helvetica Neue', Arial, sans-serif; height: 100vh; overflow: hidden; -webkit-font-smoothing: antialiased; }
+
+        /* -------------------------- */
+        /* 1. ENTRANCE PAGE (Aesthetic) */
+        /* -------------------------- */
+        #entry-page { position: fixed; inset: 0; background: rgba(9, 9, 9, 0.95); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 100; transition: opacity 0.5s var(--ease); }
+        .hero-section { text-align: center; margin-bottom: 40px; }
+        .hero-title { font-size: 64px; font-weight: 800; color: var(--p); letter-spacing: -2px; margin: 0; }
+        .hero-subtitle { font-size: 18px; color: var(--text-s); margin-top: 10px; font-weight: 400; }
         
-        /* Main App */
-        #main-app { display: none; height: 100vh; display: grid; grid-template-columns: 3fr 1fr; }
-        .player-side { padding: 20px; display: flex; flex-direction: column; gap: 15px; border-right: 1px solid var(--brd); }
+        .entry-card { background: var(--panel); padding: 40px; border-radius: 24px; border: 1px solid var(--brd); width: 360px; box-shadow: 0 20px 60px rgba(0,0,0,0.6); animation: slideIn 0.6s var(--ease); }
+        @keyframes slideIn { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+        /* General Input Style */
+        .aesthetic-input { background: rgba(255,255,255,0.03); border: 1px solid var(--brd); padding: 14px 18px; color: var(--text-p); border-radius: 12px; outline: none; width: -webkit-fill-available; margin-bottom: 12px; font-size: 15px; transition: 0.2s ease; }
+        .aesthetic-input:focus { border-color: var(--p); box-shadow: 0 0 10px rgba(29, 185, 84, 0.2); }
+        .aesthetic-input::placeholder { color: rgba(255,255,255,0.3); }
+
+        /* Buttons */
+        .aesthetic-btn { border: none; padding: 14px 24px; border-radius: 12px; font-weight: 700; font-size: 16px; cursor: pointer; transition: 0.2s var(--ease); width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; text-transform: uppercase; letter-spacing: 1px; }
+        .primary-btn { background: var(--p); color: black; }
+        .primary-btn:hover { background: #1ed760; transform: translateY(-2px); }
+        .secondary-btn { background: var(--brd); color: var(--text-p); }
+        .secondary-btn:hover { background: #333; }
+
+        /* Divider */
+        .divider { display: flex; align-items: center; margin: 25px 0; color: #444; font-size: 12px; }
+        .divider::before, .divider::after { content: ""; flex: 1; height: 1px; background: #222; }
+        .divider-text { margin: 0 15px; text-transform: uppercase; letter-spacing: 1px; font-weight: 600; }
+
+        /* -------------------------- */
+        /* 2. MAIN APP UI (Aesthetic) */
+        /* -------------------------- */
+        #main-app { display: none; height: 100vh; grid-template-columns: 3fr minmax(300px, 1fr); gap: 0; }
+        .player-side { padding: 30px; display: flex; flex-direction: column; gap: 20px; border-right: 1px solid var(--brd); background: #0b0b0b; }
         .chat-side { background: var(--panel); display: flex; flex-direction: column; }
 
-        .video-container { flex: 1; width: 100%; position: relative; background: #000; border-radius: 12px; overflow: hidden; border: 1px solid var(--brd); }
+        /* Full Size Video with Shadow */
+        .video-container { flex: 1; width: 100%; position: relative; background: #000; border-radius: 16px; overflow: hidden; border: 1px solid var(--brd); box-shadow: 0 10px 40px rgba(0,0,0,0.5); }
         #main-player { position: absolute; top:0; left:0; width: 100%; height: 100%; border: none; }
 
-        input { background: #1e1e1e; border: 1px solid var(--brd); padding: 12px; color: white; border-radius: 8px; outline: none; width: -webkit-fill-available; margin-bottom: 10px; }
-        input:focus { border-color: var(--p); }
-        .btn { background: var(--p); border: none; padding: 12px 20px; border-radius: 8px; font-weight: bold; cursor: pointer; color: black; transition: 0.2s; width: 100%; }
-        .btn:hover { transform: scale(1.02); }
+        /* Chat Message Aesthetic */
+        #messages { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; scroll-behavior: smooth; }
+        .msg { background: rgba(255,255,255,0.03); padding: 10px 14px; border-radius: 12px; font-size: 14px; align-self: flex-start; max-width: 85%; animation: msgPop 0.3s var(--ease); border: 1px solid transparent; }
+        .msg:hover { background: rgba(255,255,255,0.06); border-color: var(--brd); }
+        @keyframes msgPop { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
 
-        #messages { flex: 1; padding: 15px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; }
-        .msg { background: #222; padding: 8px 12px; border-radius: 8px; border-left: 3px solid var(--p); font-size: 14px; align-self: flex-start; max-width: 85%; }
-        .msg b { color: var(--p); margin-right: 5px; }
+        .msg b { color: var(--p); margin-right: 5px; font-weight: 700; }
+        .system-msg { background: none; padding: 5px 14px; border: none; border-left: 3px solid var(--p); font-size: 12px; color: var(--text-s); font-weight: 500; font-style: italic; }
+        .you-msg { align-self: flex-end; background: var(--p); color: black; border-radius: 12px 12px 2px 12px; }
+        .you-msg b { color: black; }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #333; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #444; }
     </style>
 </head>
 <body>
 
     <div id="entry-page">
-        <h1 style="color:var(--p); font-size: 50px; margin-bottom:10px;">Syncly</h1>
+        <div class="hero-section">
+            <h1 class="hero-title">Syncly</h1>
+            <p class="hero-subtitle">Vibe together. Sync the night.</p>
+        </div>
         <div class="entry-card">
-            <input type="text" id="user-name" placeholder="Enter Your Name (e.g. Fatir)" style="border-bottom: 2px solid var(--p);">
-            <div style="margin-top: 20px;">
-                <button class="btn" onclick="initPeer(true)">CREATE ROOM</button>
-                <div style="margin: 15px 0; color: #444; font-weight: bold;">OR</div>
-                <input type="text" id="join-input" placeholder="Enter Room ID">
-                <button class="btn" style="background:#333; color:white;" onclick="initPeer(false)">JOIN ROOM</button>
+            <input type="text" id="user-name" placeholder="Enter Nickname" class="aesthetic-input" style="font-weight:700; text-align:center;">
+            
+            <div style="margin-top: 30px;">
+                <button class="aesthetic-btn primary-btn" onclick="initPeer(true)">CREATE NEW ROOM</button>
+                <div class="divider"><span class="divider-text">OR</span></div>
+                <input type="text" id="join-input" placeholder="Paste Short Room ID" class="aesthetic-input">
+                <button class="aesthetic-btn secondary-btn" onclick="initPeer(false)">JOIN ROOM</button>
             </div>
         </div>
     </div>
@@ -48,40 +97,42 @@
     <div id="main-app">
         <div class="player-side">
             <div style="display:flex; justify-content:space-between; align-items:center;">
-                <h2 style="color:var(--p); margin:0;">Syncly</h2>
-                <div id="room-id-tag" style="background:var(--p); color:black; padding:6px 15px; border-radius:20px; font-weight:bold; font-size:13px;">ID: ...</div>
+                <h2 style="color:var(--p); margin:0; font-weight:800; letter-spacing: -1px; font-size:24px;">Syncly</h2>
+                <div id="room-id-tag" style="background:var(--p); color:black; padding:6px 16px; border-radius:30px; font-weight:bold; font-size:12px; text-transform: uppercase; letter-spacing: 1px;">ID: ...</div>
             </div>
-            <div style="display:flex; gap:10px;">
-                <input type="text" id="search-input" placeholder="Search song or paste link..." style="margin:0;">
-                <button class="btn" style="width:100px;" onclick="handlePlay(true)">PLAY</button>
+            
+            <div style="display:flex; gap:10px; background: rgba(255,255,255,0.02); padding: 5px; border-radius: 14px; border: 1px solid var(--brd);">
+                <input type="text" id="search-input" placeholder="Search song or paste link..." class="aesthetic-input" style="margin:0; border: none; background: transparent;">
+                <button class="aesthetic-btn primary-btn" style="width:100px; margin:0;" onclick="handlePlay(true)">PLAY</button>
             </div>
+
             <div class="video-container">
                 <iframe id="main-player" src="" allow="autoplay; encrypted-media" allowfullscreen></iframe>
             </div>
         </div>
 
         <div class="chat-side">
-            <div style="padding:15px; border-bottom:1px solid var(--brd); font-weight:bold; color:var(--p);">LIVE CHAT</div>
+            <div style="padding:20px 25px; border-bottom:1px solid var(--brd); font-weight:700; color:var(--text-p); text-transform:uppercase; font-size:13px; letter-spacing:1px; background:var(--panel);">LIVE CHAT</div>
             <div id="messages"></div>
-            <div style="padding:15px; border-top:1px solid var(--brd); display:flex; gap:5px;">
-                <input type="text" id="chat-input" placeholder="Message..." style="margin:0;" onkeypress="if(event.key==='Enter') sendChat()">
-                <button class="btn" style="width:50px;" onclick="sendChat()">></button>
+            <div style="padding:20px; border-top:1px solid var(--brd); display:flex; gap:10px; background:var(--panel);">
+                <input type="text" id="chat-input" placeholder="Say something..." class="aesthetic-input" style="margin:0;" onkeypress="if(event.key==='Enter') sendChat()">
+                <button class="aesthetic-btn primary-btn" style="width:60px; margin:0;" onclick="sendChat()">></button>
             </div>
         </div>
     </div>
 
     <script>
-        const API_KEY = 'AIzaSyAaCRqzXizB5wt8iFc7O-yfFvherdJi_-I'; // <--- BHAI APNI KEY DAALNA MAT BHOOLNA
+        const API_KEY = 'AIzaSyAaCRqzXizB5wt8iFc7O-yfFvherdJi_-I'; // <--- APNI KEY DAALNA MAT BHOOLNA
         let peer, connections = [];
         let isHost = false;
         let myName = "";
 
         function initPeer(hostMode) {
             myName = document.getElementById('user-name').value.trim();
-            if(!myName) return alert("Pehle apna naam toh batao bhai!");
+            if(!myName) return alert("Bhai nickname toh daalo!");
 
             isHost = hostMode;
-            // Short ID Logic
+            // Short ID Logic (5 chars)
             const shortId = isHost ? Math.random().toString(36).substring(2, 7) : null;
             peer = new Peer(shortId);
 
@@ -108,8 +159,8 @@
 
         function setupListeners(conn) {
             conn.on('open', () => {
-                addMsg("System", "Sync Connected!");
-                // Host ko apna naam bhej rahe hain
+                addMsg("System", "Vibe Connected!", true);
+                // System notification to everyone
                 conn.send({type: 'system', val: myName + " joined the vibe!"});
             });
 
@@ -123,7 +174,7 @@
                     if(isHost) broadcast(data, conn);
                 }
                 if(data.type === 'system') {
-                    addMsg("System", data.val);
+                    addMsg("System", data.val, true);
                     if(isHost) broadcast(data, conn);
                 }
             });
@@ -134,8 +185,11 @@
         }
 
         function showApp() {
-            document.getElementById('entry-page').style.display = 'none';
-            document.getElementById('main-app').style.display = 'grid';
+            document.getElementById('entry-page').style.opacity = '0';
+            setTimeout(() => {
+                document.getElementById('entry-page').style.display = 'none';
+                document.getElementById('main-app').style.display = 'grid';
+            }, 500); // Wait for fade-out
         }
 
         async function handlePlay(isLocal) {
@@ -145,9 +199,11 @@
             let vidId = "";
             if(q.includes("v=")) vidId = q.split("v=")[1].split("&")[0];
             else {
-                const res = await fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=1&q=${encodeURIComponent(q)}&key=${API_KEY}`);
-                const data = await res.json();
-                vidId = data.items[0].id.videoId;
+                try {
+                    const res = await fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=1&q=${encodeURIComponent(q)}&key=${API_KEY}`);
+                    const data = await res.json();
+                    if(data.items.length > 0) vidId = data.items[0].id.videoId;
+                } catch(e) { console.error(e); }
             }
 
             if(vidId) {
@@ -157,6 +213,7 @@
                     isHost ? broadcast(payload) : connections[0].send(payload);
                 }
             }
+            document.getElementById('search-input').value = "";
         }
 
         function updatePlayer(id) {
@@ -173,10 +230,11 @@
             }
         }
 
-        function addMsg(u, t) {
+        function addMsg(u, t, isSystem=false) {
             let b = document.getElementById('messages');
-            let label = u === "System" ? "<i>System</i>" : `<b>${u}</b>`;
-            b.innerHTML += `<div class="msg">${label}: ${t}</div>`;
+            let style = isSystem ? "system-msg" : (u === "You" ? "you-msg" : "");
+            let label = isSystem ? `<i>Syncly Bot</i>` : (u === "You" ? `<b>You</b>` : `<b>${u}</b>`);
+            b.innerHTML += `<div class="msg ${style}">${label}: ${t}</div>`;
             b.scrollTop = b.scrollHeight;
         }
     </script>
